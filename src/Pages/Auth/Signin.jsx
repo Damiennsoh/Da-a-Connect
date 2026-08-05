@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import styles from "./auth.module.css";
 import { useNavigate, Link } from "react-router-dom";
 import { auth, isFirebaseConfigured } from "../../Utility/firebase";
@@ -21,7 +21,7 @@ import googleIcon from "../../assets/Images/google.png";
 const provider = new GoogleAuthProvider();
 
 const Signin = () => {
-  const { dispatch } = useCart();
+  useCart();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
