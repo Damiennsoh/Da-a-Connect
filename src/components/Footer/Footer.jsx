@@ -44,7 +44,7 @@ const Footer = () => {
         </div>
       </div>
       <div className={styles.footerBottomLinks}>
-        <span>Ghana · English · GHS ₵</span>
+        <span>Ghana · English · GHS</span>
         <div className={styles.legalLinks}><a href="/results">Privacy</a><a href="/results">Terms</a><a href="/results">Returns</a></div>
         <span>© {new Date().getFullYear()} Da&apos;a Connect · PsyCatech-Solutions</span>
       </div>
