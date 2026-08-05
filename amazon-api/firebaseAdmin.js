@@ -1,12 +1,20 @@
-// Firebase Admin SDK setup for backend token verification
+// Firebase Admin SDK setup for backend token verification.
 const admin = require("firebase-admin");
 
-let serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+  : process.env.FIREBASE_PROJECT_ID &&
+      process.env.FIREBASE_CLIENT_EMAIL &&
+      process.env.FIREBASE_PRIVATE_KEY
+    ? {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }
+    : null;
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+if (serviceAccount && !admin.apps.length) {
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 
-module.exports = admin;
+module.exports = serviceAccount ? admin : null;

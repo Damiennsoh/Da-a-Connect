@@ -4,10 +4,9 @@ import { FaSearch, FaBars, FaMapMarkerAlt, FaUser } from "react-icons/fa";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
 import { FiChevronDown } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import nav_logo from "../../assets/Images/nav_log.png";
 import usa_flag from "../../assets/Images/usa_flag.png";
 import { useCart } from "../DataProvider/DataProvider";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import { ACTIONS } from "../../Utility/actions";
 import { toast } from "react-toastify";
 
@@ -70,40 +69,30 @@ function Header() {
   const displayCountry = shippingDetails?.country || country || "Country";
 
   const desktopNavLinks = [
-    { name: "All", icon: FaBars },
-    "Today's Deals",
-    "Customer Service",
-    "Registry",
-    "Gift Cards",
-    "Sell",
+    { name: "Shop categories", icon: FaBars },
+    "Fresh picks",
+    "Ghana-made",
+    "Sell with us",
+    "Help centre",
   ];
 
   const secondaryNavLinks = [
-    "Video",
-    "Deals",
-    "Amazon Basics",
-    "Best Sellers",
-    "Livestreams",
-    "Prime",
-    "Gift Cards",
-    "Buy Again",
-    "Customer Service",
-    "Home & Kitchen",
+    "All categories",
+    "Fashion & textiles",
+    "Beauty & care",
+    "Home & living",
     "Electronics",
-    "Books",
-    "Fashion",
-    "Toys & Games",
-    "Health & Personal Care",
-    "Beauty & Personal Care",
-    "Sports & Outdoors",
-    "Automotive",
-    "Coupons",
-    "Gift Ideas",
+    "Groceries",
+    "Crafts & gifts",
+    "Books & learning",
+    "Deals",
   ];
 
   // Sign out handler
   const handleSignOut = async () => {
-    await auth.signOut();
+    if (isFirebaseConfigured && auth) {
+      await auth.signOut();
+    }
     dispatch({ type: ACTIONS.SET_USER, payload: null });
     toast.success("Signed out successfully!");
   };
@@ -128,8 +117,9 @@ function Header() {
           >
             <FaBars />
           </button>
-          <Link to="/" className={styles.logoLink}>
-            <img src={nav_logo} alt="Amazon Logo" className={styles.logo} />
+          <Link to="/" className={styles.logoLink} aria-label="Da'a Connect home">
+            <span className={styles.logoMark}>D</span>
+            <span className={styles.logoWordmark}>Da&apos;a <b>Connect</b></span>
           </Link>
           {/* DeliverTo for DESKTOP - hidden on mobile via CSS */}
           <Link
@@ -139,7 +129,7 @@ function Header() {
             <div className={`${styles.deliverTo} ${styles.deliverToDesktop}`}>
               <FaMapMarkerAlt className={styles.locationIcon} />
               <div className={styles.deliverTextWrap}>
-                <span className={styles.deliverLabel}>Deliver to</span>
+                <span className={styles.deliverLabel}>Shop from Ghana</span>
                 <span className={styles.deliverCountry}>{displayCountry}</span>
               </div>
             </div>
@@ -149,15 +139,16 @@ function Header() {
         {/* Center: Search Bar */}
         <form className={styles.searchBar}>
           <select className={styles.searchDropdown} title="Search category">
-            <option>All</option>
-            <option>Books</option>
+            <option>All categories</option>
+            <option>Fashion & textiles</option>
             <option>Electronics</option>
-            <option>Clothing</option>
+            <option>Home & living</option>
+            <option>Groceries</option>
           </select>
           <input
             className={styles.searchInput}
-            placeholder="Search Amazon"
-            aria-label="Search Amazon"
+            placeholder="Search Da'a Connect"
+            aria-label="Search Da'a Connect"
           />
           <button className={styles.searchBtn} type="submit" title="Search">
             <FaSearch />
@@ -322,7 +313,7 @@ function Header() {
         >
           <div className={styles.deliverToMobile}>
             <FaMapMarkerAlt className={styles.locationIcon} />
-            <span>Deliver to {displayCountry}</span>
+              <span>Shop from Ghana · Deliver to {displayCountry}</span>
           </div>
         </Link>
       </div>
@@ -367,13 +358,13 @@ function Header() {
         >
           Home
         </Link>
-        <span className={styles.navLink}>Shop by Department</span>
+        <span className={styles.navLink}>          Browse categories</span>
         <Link
           to="/results"
           className={styles.navLink}
           onClick={() => setShowMenu(false)}
         >
-          Today's Deals
+          Fresh picks
         </Link>
         <div className={styles.mobileMenuItem}>
           <Link

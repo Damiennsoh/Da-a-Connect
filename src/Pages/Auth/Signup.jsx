@@ -1,7 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import styles from "./auth.module.css";
 import { useNavigate, Link } from "react-router-dom";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -13,16 +13,15 @@ import { ClipLoader } from "react-spinners";
 import { useCart } from "../../components/DataProvider/DataProvider";
 import { ACTIONS } from "../../Utility/actions";
 
-// Images
-import logo from "../../assets/Images/logo2.png";
-import BG1 from "../../assets/Images/login-BG.png";
+// Background and provider imagery
+import BG1 from "../../assets/Images/login-BG.png"
 import BG2 from "../../assets/Images/login-BG2.png";
 import googleIcon from "../../assets/Images/google.png";
 
 const provider = new GoogleAuthProvider();
 
 const Signup = () => {
-  const { dispatch } = useCart();
+  useCart();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +33,7 @@ const Signup = () => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const navigate = useNavigate();
 
-  document.title = "Amazon";
+  document.title = "Create your account | Da'a Connect";
 
   const handleNameChange = (e) => setName(e.target.value);
   const handleEmailChange = (e) => setEmail(e.target.value);
@@ -71,6 +70,10 @@ const Signup = () => {
   };
 
   const RegisterUser = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     if (
       nameError ||
       emailError ||
@@ -99,6 +102,10 @@ const Signup = () => {
   };
 
   const GoogleAuth = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     setIsGoogleLoading(true);
     signInWithPopup(auth, provider)
       .then(() => {
@@ -120,7 +127,7 @@ const Signup = () => {
       <div className={styles.loginNavbar}>
         <div className={styles.mainLogo}>
           <Link to="/">
-            <img src={logo} className={styles.amazonLogo} alt="Amazon logo" />
+            <span className={styles.brandText}>Da&apos;a <b>Connect</b></span>
           </Link>
         </div>
         <div>

@@ -58,6 +58,7 @@ router.post("/orders", authenticateFirebaseToken, async (req, res) => {
             firebaseUid: firebaseUid,
             email: email || `${firebaseUid}@unknown.com`,
             name: name || null,
+            password: "",
           },
         });
       } catch (error) {

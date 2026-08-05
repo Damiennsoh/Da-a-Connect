@@ -2,6 +2,12 @@
 const admin = require('./firebaseAdmin');
 
 async function authenticateFirebaseToken(req, res, next) {
+  if (!admin) {
+    return res.status(503).json({
+      error: "Authentication service is not configured on the backend.",
+    });
+  }
+
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No token provided" });

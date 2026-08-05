@@ -23,22 +23,8 @@ function AppRouter() {
           <Route path="/home" element={<Landing />} />
           <Route path="/auth/signin" element={<Signin />} />
           <Route path="/auth/signup" element={<Signup />} />
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <Cart />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shipping"
-            element={
-              <ProtectedRoute>
-                <Shipping />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/shipping" element={<Shipping />} />
           <Route
             path="/orders"
             element={

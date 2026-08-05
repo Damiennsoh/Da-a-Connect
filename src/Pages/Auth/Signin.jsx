@@ -1,7 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import styles from "./auth.module.css";
 import { useNavigate, Link } from "react-router-dom";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
@@ -12,16 +12,15 @@ import { ClipLoader } from "react-spinners";
 import { useCart } from "../../components/DataProvider/DataProvider";
 import { ACTIONS } from "../../Utility/actions";
 
-// Images
-import logo from "../../assets/Images/logo2.png";
-import BG1 from "../../assets/Images/login-BG.png";
+// Background and provider imagery
+import BG1 from "../../assets/Images/login-BG.png"
 import BG2 from "../../assets/Images/login-BG2.png";
 import googleIcon from "../../assets/Images/google.png";
 
 const provider = new GoogleAuthProvider();
 
 const Signin = () => {
-  const { dispatch } = useCart();
+  useCart();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -31,7 +30,7 @@ const Signin = () => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const navigate = useNavigate();
 
-  document.title = "Amazon";
+  document.title = "Sign in | Da'a Connect";
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
@@ -59,6 +58,10 @@ const Signin = () => {
   };
 
   const LogInUser = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     if (emailError || passwordError || !email || !password) return;
     setIsLoading(true);
     signInWithEmailAndPassword(auth, email, password)
@@ -75,6 +78,10 @@ const Signin = () => {
   };
 
   const GoogleAuth = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     setIsGoogleLoading(true);
     signInWithPopup(auth, provider)
       .then(() => {
@@ -96,7 +103,7 @@ const Signin = () => {
       <div className={styles.loginNavbar}>
         <div className={styles.mainLogo}>
           <Link to="/">
-            <img src={logo} className={styles.amazonLogo} alt="Amazon logo" />
+            <span className={styles.brandText}>Da&apos;a <b>Connect</b></span>
           </Link>
         </div>
         <div>

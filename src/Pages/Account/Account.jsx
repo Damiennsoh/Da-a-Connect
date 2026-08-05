@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./account.module.css";
 import { useCart } from "../../components/DataProvider/DataProvider";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import { ACTIONS } from "../../Utility/actions";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -28,7 +28,9 @@ const Account = () => {
   const language = user?.language || "English (US)";
 
   const handleSignOut = async () => {
-    await auth.signOut();
+    if (isFirebaseConfigured && auth) {
+      await auth.signOut();
+    }
     dispatch({ type: ACTIONS.SET_USER, payload: null });
     toast.success("Signed out successfully!");
     navigate("/");
