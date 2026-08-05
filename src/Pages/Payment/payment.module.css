@@ -55,7 +55,7 @@
   color: #555; /* Label color */
 }
 .radioLabel input[type="radio"] {
-  accent-color: #f0c14b; /* Amazon-like yellow for radio button */
+  accent-color: var(--terracotta);
 }
 .totalAmount {
   font-size: 1.1rem; /* Adjusted font size */
@@ -67,16 +67,15 @@
   color: #333;
 }
 .amount {
-  color: #b12704; /* Amazon price color */
+  color: var(--terracotta);
   font-weight: bold;
   font-size: 1.2rem; /* Adjusted font size */
   margin-left: 8px;
 }
 .placeOrderBtn {
-  background-color: #f0c14b; /* Amazon yellow */
-  color: #111; /* Dark text for yellow button */
-  border: 1px solid;
-  border-color: #a88734 #9c7e31 #846a29;
+  background-color: var(--terracotta);
+  color: var(--surface);
+  border: 0;
   width: auto; /* Auto width based on content */
   min-width: 150px; /* Minimum width */
   border-radius: 3px; /* Sharper corners */
@@ -90,7 +89,7 @@
   margin: 0 auto; /* Center the button */
 }
 .placeOrderBtn:hover {
-  background-color: #e4b640; /* Darker yellow on hover */
+  background-color: #a9533a;
 }
 
 /* Card Details Section */
@@ -186,7 +185,7 @@
 
 .formGroup input {
   padding: 12px; /* Increased padding */
-  border: 1px solid #a6a6a6; /* Amazon-like border */
+  border: 1px solid #d7d0c4;
   border-radius: 3px; /* Sharper corners */
   font-size: 0.95rem; /* Adjusted font size */
   background-color: #fff; /* White background */

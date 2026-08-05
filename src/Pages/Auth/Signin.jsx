@@ -12,9 +12,8 @@ import { ClipLoader } from "react-spinners";
 import { useCart } from "../../components/DataProvider/DataProvider";
 import { ACTIONS } from "../../Utility/actions";
 
-// Images
-import logo from "../../assets/Images/logo2.png";
-import BG1 from "../../assets/Images/login-BG.png";
+// Background and provider imagery
+import BG1 from "../../assets/Images/login-BG.png"
 import BG2 from "../../assets/Images/login-BG2.png";
 import googleIcon from "../../assets/Images/google.png";
 
@@ -31,7 +30,7 @@ const Signin = () => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const navigate = useNavigate();
 
-  document.title = "Amazon";
+  document.title = "Sign in | Da'a Connect";
 
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
@@ -104,7 +103,7 @@ const Signin = () => {
       <div className={styles.loginNavbar}>
         <div className={styles.mainLogo}>
           <Link to="/">
-            <img src={logo} className={styles.amazonLogo} alt="Amazon logo" />
+            <span className={styles.brandText}>Da&apos;a <b>Connect</b></span>
           </Link>
         </div>
         <div>

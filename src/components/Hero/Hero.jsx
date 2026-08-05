@@ -71,7 +71,7 @@ const Hero = () => {
                 <source srcSet={img1Webp} type="image/webp" />
                 <img
                   src={img}
-                  alt={`Amazon hero ${idx + 1}`}
+                  alt={`Da'a Connect marketplace collection ${idx + 1}`}
                   width="1200"
                   height="500"
                   loading="eager"
@@ -81,7 +81,7 @@ const Hero = () => {
             ) : (
               <img
                 src={img}
-                alt={`Amazon hero ${idx + 1}`}
+                alt={`Da'a Connect marketplace collection ${idx + 1}`}
                 width="1200"
                 height="500"
                 loading="lazy"

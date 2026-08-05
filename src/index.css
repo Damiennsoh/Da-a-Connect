@@ -1,26 +1,55 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 
 :root {
-  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
+  font-family: "DM Sans", system-ui, sans-serif;
+  color: #24312b;
+  background: #f7f3ea;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   scroll-behavior: smooth;
+  --ink: #24312b;
+  --forest: #185c4b;
+  --forest-deep: #103f35;
+  --terracotta: #c76a4b;
+  --clay: #e6b095;
+  --cream: #f7f3ea;
+  --sand: #eee5d7;
+  --surface: #fffdf8;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
-  outline: none;
+  font-family: inherit;
 }
 
 body {
   overflow-x: hidden;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+button,
+a,
+select,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: var(--surface);
+  background: var(--terracotta);
+}
+
+:focus-visible {
+  outline: 3px solid var(--clay);
+  outline-offset: 3px;
 }
