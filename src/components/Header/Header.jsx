@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import nav_logo from "../../assets/Images/nav_log.png";
 import usa_flag from "../../assets/Images/usa_flag.png";
 import { useCart } from "../DataProvider/DataProvider";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import { ACTIONS } from "../../Utility/actions";
 import { toast } from "react-toastify";
 
@@ -103,7 +103,9 @@ function Header() {
 
   // Sign out handler
   const handleSignOut = async () => {
-    await auth.signOut();
+    if (isFirebaseConfigured && auth) {
+      await auth.signOut();
+    }
     dispatch({ type: ACTIONS.SET_USER, payload: null });
     toast.success("Signed out successfully!");
   };

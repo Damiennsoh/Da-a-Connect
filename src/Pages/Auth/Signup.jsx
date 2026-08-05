@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import styles from "./auth.module.css";
 import { useNavigate, Link } from "react-router-dom";
-import { auth } from "../../Utility/firebase";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
@@ -71,6 +71,10 @@ const Signup = () => {
   };
 
   const RegisterUser = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     if (
       nameError ||
       emailError ||
@@ -99,6 +103,10 @@ const Signup = () => {
   };
 
   const GoogleAuth = async () => {
+    if (!isFirebaseConfigured || !auth) {
+      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+      return;
+    }
     setIsGoogleLoading(true);
     signInWithPopup(auth, provider)
       .then(() => {

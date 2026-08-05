@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./Utility/firebase";
+import { auth, isFirebaseConfigured } from "./Utility/firebase";
 import { useCart } from "./components/DataProvider/DataProvider";
 import { ACTIONS } from "./Utility/actions";
 import "./App.css";
@@ -11,6 +11,11 @@ import "react-toastify/dist/ReactToastify.css";
 function App() {
   const { dispatch } = useCart();
   useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      dispatch({ type: ACTIONS.SET_USER, payload: null });
+      return undefined;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       dispatch({ type: ACTIONS.SET_USER, payload: user });
     });

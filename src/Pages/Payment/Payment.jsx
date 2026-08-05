@@ -20,17 +20,20 @@ import visaImg from "../../assets/Images/visa2.png";
 import mastercardImg from "../../assets/Images/master.png";
 import amexImg from "../../assets/Images/american.png";
 
-import { auth } from "../../Utility/firebase";
-const backendUrl =
-  import.meta.env.VITE_REACT_APP_BACKEND_URL || "http://localhost:5000/api";
+import { auth, isFirebaseConfigured } from "../../Utility/firebase";
+import { backendBaseURL } from "../../API/endPoints";
 
-const stripePromise = loadStripe(
-  "pk_test_51RfM7r98eUlvgtFkrLn7amI82y8m0PFXr7jFJasmWO5ZCEQ8Sqzvt9SwMrCkjKyS9p8B3tgIWGATRu1q9kKcoewH00YHcXHS1C"
-);
+const backendUrl = backendBaseURL;
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey
+  ? loadStripe(stripePublishableKey)
+  : Promise.resolve(null);
 
 async function saveOrderToBackend(orderData) {
-  const user = auth.currentUser;
-  if (!user) throw new Error("User not authenticated");
+  const user = auth?.currentUser;
+  if (!isFirebaseConfigured || !user) {
+    throw new Error("Sign in is required before saving an order.");
+  }
   const idToken = await user.getIdToken();
   // Attach user email and name for backend user creation
   const userInfo = { email: user.email, name: user.displayName };
@@ -84,8 +87,13 @@ function StripeCardForm({
     setError("");
     setLoading(true);
     try {
-      if (!backendUrl) {
-        setError("Backend URL is not set. Check your .env and Vite config.");
+      if (!stripe || !elements) {
+        setError("Stripe is not configured yet. Add a publishable key to test payments.");
+        setLoading(false);
+        return;
+      }
+      if (!isFirebaseConfigured || !auth?.currentUser) {
+        setError("Sign in is required before placing an order.");
         setLoading(false);
         return;
       }
@@ -278,16 +286,6 @@ const Payment = () => {
   };
 
   // Helper to provide order data to StripeCardForm
-  window.saveOrderData = () => ({
-    cart,
-    shippingDetails,
-    totalAmount,
-    discount,
-    subTotal,
-    promoCode,
-    createdAt: Timestamp.now(),
-    status: "paid",
-  });
 
   return (
     <Layout>

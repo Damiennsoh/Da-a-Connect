@@ -3,8 +3,7 @@ import Layout from "../../components/Layout";
 import styles from "./orders.module.css";
 import orderNowGif from "../../assets/Images/order-now.gif";
 import { auth } from "../../Utility/firebase";
-const backendUrl =
-  import.meta.env.VITE_REACT_APP_BACKEND_URL || "http://localhost:5000/api";
+import { backendBaseURL as backendUrl } from "../../API/endPoints";
 import OrderMap from "./OrderMap";
 
 const Orders = () => {
