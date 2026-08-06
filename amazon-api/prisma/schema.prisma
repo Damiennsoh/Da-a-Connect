@@ -7,37 +7,81 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  SHOPPER
+  VENDOR
+}
+
+enum ProductStatus {
+  ACTIVE
+  REMOVED
+}
+
 model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authId        String    @unique @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  name          String?   @db.VarChar(255)
+  password      String    @default("") @db.VarChar(255)
+  role          UserRole  @default(SHOPPER)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+  orders        Order[]
+  vendorProfile Vendor?
+}
+
+model Vendor {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  firebaseUid String    @unique @db.VarChar(255)
-  email       String    @unique @db.VarChar(255)
-  name        String?   @db.VarChar(255)
-  password    String    @db.VarChar(255)
+  userId      String    @unique @db.Uuid
+  shopName    String    @db.VarChar(255)
+  description String?   @db.Text
+  location    String    @db.VarChar(255)
+  city        String?   @db.VarChar(100)
+  region      String?   @db.VarChar(100)
+  verified    Boolean   @default(false)
   createdAt   DateTime  @default(now()) @db.Timestamptz(6)
-  orders      Order[]
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products    Product[]
+}
+
+model Product {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  vendorId    String        @db.Uuid
+  title       String        @db.VarChar(500)
+  description String        @db.Text
+  price       Float
+  category    String        @db.VarChar(100)
+  images      String[]      @default([])
+  location    String        @db.VarChar(255)
+  status      ProductStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+  vendor      Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([category, status])
+  @@index([vendorId, status])
 }
 
 model Order {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId    String    @db.Uuid
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String      @db.Uuid
   total     Float
-  status    String    @db.VarChar(50)
-  address   String?   @db.Text
-  discount  Float?    @default(0)
+  status    String      @db.VarChar(50)
+  address   String?     @db.Text
+  discount  Float?      @default(0)
   subTotal  Float?
-  promoCode String?   @db.VarChar(100)
-  createdAt DateTime  @default(now()) @db.Timestamptz(6)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCode String?     @db.VarChar(100)
+  createdAt DateTime    @default(now()) @db.Timestamptz(6)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     OrderItem[]
 }
 
 model OrderItem {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId     String  @db.Uuid
-  productId   String  @db.VarChar(100)
-  title       String  @db.VarChar(500)
-  price       Float
-  quantity    Int
-  image       String? @db.Text
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId   String @db.Uuid
+  productId String @db.VarChar(100)
+  title     String @db.VarChar(500)
+  price     Float
+  quantity  Int
+  image     String? @db.Text
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

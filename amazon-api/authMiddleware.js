@@ -1,25 +1,31 @@
-// Middleware to verify Firebase ID token using Admin SDK
-const admin = require('./firebaseAdmin');
+const jwt = require("jsonwebtoken");
 
-async function authenticateFirebaseToken(req, res, next) {
-  if (!admin) {
-    return res.status(503).json({
-      error: "Authentication service is not configured on the backend.",
-    });
-  }
-
+async function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No token provided" });
   }
-  const idToken = authHeader.split(" ")[1];
+
+  const token = authHeader.split(" ")[1];
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.firebaseUid = decodedToken.uid;
+    if (!process.env.SUPABASE_JWT_SECRET) {
+      throw new Error("Missing SUPABASE_JWT_SECRET environment variable");
+    }
+
+    const decodedToken = jwt.verify(token, process.env.SUPABASE_JWT_SECRET);
+    req.authId = decodedToken.sub; // Supabase uses 'sub' for the user ID
+    
+    // In Supabase Auth, email might be in decodedToken.email
+    req.body = req.body || {};
+    if (!req.body.email && decodedToken.email) {
+       req.body.email = decodedToken.email;
+    }
+    
     next();
   } catch (err) {
+    console.error("[AUTH ERROR]", err.message);
     res.status(401).json({ error: "Invalid or expired token" });
   }
 }
 
-module.exports = { authenticateFirebaseToken };
+module.exports = { authenticateToken };

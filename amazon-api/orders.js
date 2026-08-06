@@ -3,9 +3,11 @@ const express = require("express");
 const prisma = require("./prisma/client");
 const router = express.Router();
 
-// Create a new order (called from payment endpoint, requires Firebase auth)
-const { authenticateFirebaseToken } = require("./authMiddleware");
-router.post("/orders", authenticateFirebaseToken, async (req, res) => {
+// Create a new order (called from payment endpoint, requires auth)
+const { authenticateToken } = require("./authMiddleware");
+const { ensureUser } = require("./lib/users");
+
+router.post("/orders", authenticateToken, async (req, res) => {
   console.log("Order endpoint hit. Body:", req.body);
   
   // Create a new Prisma client for this request to avoid prepared statement conflicts
@@ -13,8 +15,7 @@ router.post("/orders", authenticateFirebaseToken, async (req, res) => {
   const requestPrisma = new PrismaClient();
   
   try {
-    // userId is now taken from the verified Firebase token
-    const firebaseUid = req.firebaseUid;
+    const authId = req.authId;
     const {
       totalAmount,
       paymentStatus,
@@ -26,68 +27,36 @@ router.post("/orders", authenticateFirebaseToken, async (req, res) => {
       subTotal,
       promoCode,
     } = req.body;
-    if (!firebaseUid || !items || !Array.isArray(items) || items.length === 0) {
+    
+    if (!authId || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Missing required order data." });
     }
 
-    // Ensure user exists in DB, create if not
-    // Try to find user by firebaseUid first (new schema), fallback to id (old schema)
+    // Ensure user exists in DB
     let user;
     try {
       user = await requestPrisma.user.findUnique({
-        where: { firebaseUid: firebaseUid },
+        where: { authId: authId },
       });
-    } catch (error) {
-      // If firebaseUid field doesn't exist, try using id field (legacy)
-      console.log("Falling back to legacy user lookup by id");
-      try {
-        user = await requestPrisma.user.findUnique({
-          where: { id: firebaseUid },
-        });
-      } catch (legacyError) {
-        console.log("Legacy lookup failed, user doesn't exist");
-        user = null;
-      }
-    }
-
-    if (!user) {
-      try {
-        // Try creating with new schema first
+      if (!user) {
         user = await requestPrisma.user.create({
           data: {
-            firebaseUid: firebaseUid,
-            email: email || `${firebaseUid}@unknown.com`,
+            authId: authId,
+            email: email || `${authId}@unknown.com`,
             name: name || null,
             password: "",
           },
         });
-      } catch (error) {
-        // If new schema fails, try legacy schema (minimal fields only)
-        console.log("Falling back to legacy user creation");
-        try {
-          user = await requestPrisma.user.create({
-            data: {
-              id: firebaseUid,
-              email: email || `${firebaseUid}@unknown.com`,
-              name: name || null,
-            },
-          });
-        } catch (minimalError) {
-          // If even that fails, try with just email
-          console.log("Falling back to minimal user creation");
-          user = await requestPrisma.user.create({
-            data: {
-              email: email || `${firebaseUid}@unknown.com`,
-              name: name || null,
-            },
-          });
-        }
       }
+    } catch (err) {
+      console.error("User lookup/creation failed:", err);
+      return res.status(500).json({ error: "Failed to process user data" });
     }
+
     // Store shippingDetails as JSON string in address field
     const order = await requestPrisma.order.create({
       data: {
-        userId: user.id, // using the generated UUID, not the Firebase UID
+        userId: user.id,
         total: totalAmount,
         status: paymentStatus,
         address: shippingDetails ? JSON.stringify(shippingDetails) : "",
@@ -119,22 +88,11 @@ router.post("/orders", authenticateFirebaseToken, async (req, res) => {
 });
 
 // Get all orders for the authenticated user
-router.get("/orders", authenticateFirebaseToken, async (req, res) => {
+router.get("/orders", authenticateToken, async (req, res) => {
   try {
-    const firebaseUid = req.firebaseUid;
+    const authId = req.authId;
 
-    // Find user by Firebase UID first (new schema), fallback to id (old schema)
-    let user;
-    try {
-      user = await prisma.user.findUnique({ where: { firebaseUid } });
-    } catch (error) {
-      // Fallback to legacy schema
-      try {
-        user = await prisma.user.findUnique({ where: { id: firebaseUid } });
-      } catch (legacyError) {
-        user = null;
-      }
-    }
+    const user = await prisma.user.findUnique({ where: { authId } });
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });

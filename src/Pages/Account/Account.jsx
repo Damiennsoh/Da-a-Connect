@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./account.module.css";
 import { useCart } from "../../components/DataProvider/DataProvider";
-import { auth, isFirebaseConfigured } from "../../Utility/firebase";
+import { supabase, isSupabaseConfigured } from "../../Utility/supabase";
 import { ACTIONS } from "../../Utility/actions";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -20,16 +20,16 @@ const Account = () => {
   const navigate = useNavigate();
 
   const displayName =
-    user?.reloadUserInfo?.displayName || user?.displayName || "-";
-  const email = user?.email || user?.reloadUserInfo?.email || "-";
+    user?.user_metadata?.display_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "-";
+  const email = user?.email || "-";
 
   const dateOfBirth = user?.dateOfBirth || "-";
   const countryRegion = user?.countryRegion || "-";
   const language = user?.language || "English (US)";
 
   const handleSignOut = async () => {
-    if (isFirebaseConfigured && auth) {
-      await auth.signOut();
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
     }
     dispatch({ type: ACTIONS.SET_USER, payload: null });
     toast.success("Signed out successfully!");

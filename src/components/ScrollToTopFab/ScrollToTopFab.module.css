@@ -1,0 +1,52 @@
+.fabContainer {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+}
+
+.fabContainer.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.fabButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background-color: var(--terracotta, #e67a5b);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.fabButton:hover {
+  background-color: #d16b4d;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.fabButton:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .fabContainer {
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
+  
+  .fabButton {
+    width: 3rem;
+    height: 3rem;
+  }
+}

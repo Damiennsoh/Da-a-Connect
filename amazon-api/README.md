@@ -123,8 +123,32 @@ npm start
 
 ## 📡 API Endpoints
 
-- `POST /api/orders` — Create a new order (requires Firebase auth and Stripe payment)
+### Orders & payments
+- `POST /api/orders` — Create a new order (requires Firebase auth)
 - `GET /api/orders` — Get all orders for the authenticated user
+- `POST /api/payment/create-checkout-session` — Stripe Checkout
+- `POST /api/payment/create-payment-intent` — Stripe PaymentIntent
+
+### Vendor & catalogue
+- `POST /api/vendors/register` — Create vendor profile (Firebase auth)
+- `GET /api/vendors/me` — Get current vendor profile
+- `PATCH /api/vendors/me` — Update vendor profile
+- `GET /api/vendors/me/products` — List authenticated vendor's products
+- `GET /api/products` — Public product catalogue (`?category=&q=&vendorId=`)
+- `GET /api/products/:id` — Public product detail
+- `POST /api/products` — Create listing (vendor auth)
+- `PATCH /api/products/:id` — Update listing (vendor auth, own products)
+- `DELETE /api/products/:id` — Soft-remove listing (vendor auth)
+
+### Database migration (vendor catalogue)
+After pulling the latest schema, run:
+
+```bash
+npm run db:generate
+npm run db:push
+```
+
+Or apply `prisma/migrations/add_vendor_catalog.sql` on Postgres.
 
 ---
 

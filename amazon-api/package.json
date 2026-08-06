@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +18,7 @@
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
+    "jsonwebtoken": "^9.0.3",
     "nodemon": "^3.1.10",
     "prisma": "^6.11.0",
     "stripe": "^18.2.1"

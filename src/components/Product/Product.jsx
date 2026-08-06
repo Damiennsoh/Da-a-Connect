@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import ProductCard from "./ProductCard";
 import styles from "./product.module.css";
 import Spinner from "../Spinner";
+import { fetchMarketplaceProducts } from "../../API/productService";
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -10,10 +10,8 @@ const Product = () => {
 
   useEffect(() => {
     setLoading(true);
-    axios
-      .get("https://fakestoreapi.com/products")
-      .then((res) => setProducts(res.data))
-      .catch(() => setProducts([]))
+    fetchMarketplaceProducts()
+      .then(setProducts)
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,7 +21,7 @@ const Product = () => {
         <Spinner />
       ) : (
         products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={`${product.source}-${product.id}`} product={product} />
         ))
       )}
     </div>

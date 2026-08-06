@@ -10,7 +10,8 @@
 .eyebrow { margin: 0; color: var(--terracotta); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 .heroCopy h1 { max-width: 16ch; margin: 0; color: var(--forest-deep); font-size: clamp(1.45rem, 3.3vw, 3.35rem); line-height: 1.05; }
 .body { max-width: 28rem; margin: 0; color: var(--cocoa); font-size: clamp(0.78rem, 1.2vw, 1rem); line-height: 1.45; }
-.heroAction { width: fit-content; margin-top: 0.25rem; color: var(--terracotta); font-size: 0.8rem; font-weight: 800; }
+.heroAction { width: fit-content; margin-top: 0.25rem; color: var(--terracotta); font-size: 0.8rem; font-weight: 800; text-decoration: none; }
+.heroAction:hover { text-decoration: underline; }
 .carouselArrow { position: absolute; top: 50%; z-index: 2; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; transform: translateY(-50%); border: 1px solid rgba(255, 253, 248, 0.5); border-radius: 50%; background: rgba(16, 63, 53, 0.65); color: var(--surface); cursor: pointer; }
 .carouselArrow:hover { background: var(--terracotta); }
 .carouselArrowPrev { left: 0.75rem; }

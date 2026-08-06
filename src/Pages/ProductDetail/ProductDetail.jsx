@@ -4,8 +4,8 @@ import Layout from "../../components/Layout";
 // import Footer from "../../components/Footer";
 import styles from "./productDetail.module.css";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import productBaseURL from "../../API/endPoints";
+import { fetchMarketplaceProduct } from "../../API/productService";
+import { getCategoryTitle } from "../../data/categories";
 import PriceFormat from "../../components/Product/PriceFormat";
 import Spinner from "../../components/Spinner";
 import Rating from "@mui/material/Rating";
@@ -32,9 +32,8 @@ const ProductDetail = () => {
 
   useEffect(() => {
     setLoading(true);
-    axios
-      .get(`${productBaseURL}/products/${id}`)
-      .then((res) => setProduct(res.data))
+    fetchMarketplaceProduct(id)
+      .then((res) => setProduct(res))
       .catch(() => setProduct(null))
       .finally(() => setLoading(false));
   }, [id]);
@@ -80,7 +79,7 @@ const ProductDetail = () => {
     );
   }
 
-  const { image, title, category, rating = {}, price, description } = product;
+  const { image, title, category, rating = {}, price, description, location, vendor } = product;
   const reviews = rating.count || 0;
   const rate = rating.rate || 0;
   const oldPrice = price * 1.7;
@@ -140,7 +139,13 @@ const ProductDetail = () => {
         </div>
         <div className={styles.infoSection}>
           <div className={styles.title}>{title}</div>
-          <div className={styles.category}>{category}</div>
+          <div className={styles.category}>{getCategoryTitle(category) || category}</div>
+          {vendor?.shopName && (
+            <div className={styles.category}>Sold by {vendor.shopName}</div>
+          )}
+          {location && (
+            <div className={styles.category}>Location: {location}</div>
+          )}
           <div className={styles.ratingRow}>
             <Rating value={rate} precision={0.1} size="medium" />
             <span className={styles.ratingValue}>{rate}</span>

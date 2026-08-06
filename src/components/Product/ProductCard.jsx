@@ -6,13 +6,16 @@ import PriceFormat from "./PriceFormat";
 import styles from "./productCard.module.css";
 import { useCart } from "../DataProvider/DataProvider";
 
+import { getCategoryTitle } from "../../data/categories";
+
 const ProductCard = ({ product }) => {
-  const { id, image, title, category, rating = {}, price } = product;
+  const { id, image, title, category, rating = {}, price, location, vendor } = product;
   const reviews = rating.count || 0;
   const rate = rating.rate || 0;
   const oldPrice = price * 1.7;
-  const discount = "60% OFF";
+  const discount = product.source === "catalog" ? "Local seller" : "60% OFF";
   const displayTitle = title.length > 50 ? title.slice(0, 50) + "..." : title;
+  const categoryLabel = getCategoryTitle(category) || category;
   const { dispatch } = useCart();
   const [added, setAdded] = useState(false);
 
@@ -28,7 +31,7 @@ const ProductCard = ({ product }) => {
       <Link to={`/product/${id}`} style={{ textDecoration: "none" }}>
         <div className={styles.imgWrapper}>
           <div className={styles.imgHoverOverlay}></div>
-          <img src={image} alt={title} className={styles.img} />
+          <img src={image} alt={title} className={styles.img} loading="lazy" />
           <button className={styles.viewBtn}>View product</button>
         </div>
       </Link>
@@ -47,7 +50,13 @@ const ProductCard = ({ product }) => {
       </button>
       <div className={styles.info}>
         <h3 className={styles.title}>{displayTitle}</h3>
-        <div className={styles.category}>{category}</div>
+        <div className={styles.category}>{categoryLabel}</div>
+        {(location || vendor?.shopName) && (
+          <div className={styles.category}>
+            {vendor?.shopName ? `${vendor.shopName} · ` : ""}
+            {location || vendor?.location}
+          </div>
+        )}
         <div className={styles.ratingRow}>
           <Rating value={rate} precision={0.1} readOnly size="small" />
           <span className={styles.ratingValue}>{rate}</span>

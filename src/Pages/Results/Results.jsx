@@ -1,32 +1,46 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Layout from "../../components/Layout";
-// import Footer from "../../components/Footer";
 import styles from "./results.module.css";
-import { useParams } from "react-router-dom";
-import axios from "axios";
-import productBaseURL from "../../API/endPoints";
+import { useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../../components/Product/ProductCard";
 import Spinner from "../../components/Spinner";
+import { getCategoryApiSlug, getCategoryTitle } from "../../data/categories";
+import { fetchMarketplaceCategory, fetchMarketplaceProducts } from "../../API/productService";
 
 const Results = () => {
-  const { categoryName } = useParams([]);
+  const { categoryName } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q")?.trim() ?? "";
   const [res, setRes] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const pageTitle = categoryName
+    ? getCategoryTitle(categoryName)
+    : searchQuery
+      ? `Results for "${searchQuery}"`
+      : "All products";
+
   useEffect(() => {
     setLoading(true);
-    axios
-      .get(`${productBaseURL}/products/category/${categoryName}`)
-      .then((res) => setRes(res.data))
-      .catch((err) => setRes([]))
-      .finally(() => setLoading(false));
-  }, [categoryName]);
+
+    const loadProducts = categoryName
+      ? fetchMarketplaceCategory(categoryName, {
+          q: searchQuery,
+          apiSlug: getCategoryApiSlug(categoryName),
+        })
+      : fetchMarketplaceProducts({ q: searchQuery });
+
+    loadProducts.then(setRes).finally(() => setLoading(false));
+  }, [categoryName, searchQuery]);
 
   const productList = useMemo(
     () =>
       res && res.length > 0 ? (
         res.map((product) => (
-          <ProductCard key={product.id || product._id} product={product} />
+          <ProductCard
+            key={`${product.source}-${product.id}`}
+            product={product}
+          />
         ))
       ) : (
         <p>No products found in this category.</p>
@@ -37,17 +51,13 @@ const Results = () => {
   return (
     <Layout>
       <div className={styles.resultsWrapper}>
-        <h2>
-          {categoryName &&
-            categoryName.charAt(0).toUpperCase() + categoryName.slice(1)}
-        </h2>
+        <h2>{pageTitle}</h2>
         {loading ? (
           <Spinner />
         ) : (
           <div className={styles.productsGrid}>{productList}</div>
         )}
       </div>
-      {/* <Footer /> */}
     </Layout>
   );
 };

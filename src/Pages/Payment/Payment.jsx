@@ -20,7 +20,7 @@ import visaImg from "../../assets/Images/visa2.png";
 import mastercardImg from "../../assets/Images/master.png";
 import amexImg from "../../assets/Images/american.png";
 
-import { auth, isFirebaseConfigured } from "../../Utility/firebase";
+import { supabase, isSupabaseConfigured } from "../../Utility/supabase";
 import { backendBaseURL } from "../../API/endPoints";
 
 const backendUrl = backendBaseURL;
@@ -30,20 +30,18 @@ const stripePromise = stripePublishableKey
   : Promise.resolve(null);
 
 async function saveOrderToBackend(orderData) {
-  const user = auth?.currentUser;
-  if (!isFirebaseConfigured || !user) {
+  if (!isSupabaseConfigured || !supabase) {
     throw new Error("Sign in is required before saving an order.");
   }
-  const idToken = await user.getIdToken();
-  // Attach user email and name for backend user creation
-  const userInfo = { email: user.email, name: user.displayName };
-  const response = await fetch(`${backendUrl}/orders`, {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Sign in is required before saving an order.");
+  const response = await fetch(`${backendBaseURL}/orders`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
+      Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ ...orderData, ...userInfo }),
+    body: JSON.stringify(orderData),
   });
   if (!response.ok) throw new Error("Failed to save order");
   return response.json();
@@ -92,7 +90,13 @@ function StripeCardForm({
         setLoading(false);
         return;
       }
-      if (!isFirebaseConfigured || !auth?.currentUser) {
+      if (!isSupabaseConfigured || !supabase) {
+        setError("Sign in is required before placing an order.");
+        setLoading(false);
+        return;
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
         setError("Sign in is required before placing an order.");
         setLoading(false);
         return;
@@ -263,12 +267,14 @@ const Payment = () => {
         },
         quantity: item.quantity,
       }));
+      const { data: { session } } = await supabase.auth.getSession();
+      const authId = session?.user?.id || "";
       const response = await fetch(
         `${backendUrl}/payment/create-checkout-session`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, shippingDetails }),
+          body: JSON.stringify({ items, shippingDetails, authId }),
         }
       );
       const data = await response.json();
