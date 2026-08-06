@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Carousel } from "react-responsive-carousel";
 import styles from "./hero.module.css";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
@@ -11,18 +12,28 @@ const heroCopy = [
     title: "Find pieces with a story.",
     body: "From Accra makers to everyday essentials, shop a marketplace that feels close to home.",
     action: "Explore the marketplace",
+    href: "/results",
   },
   {
-    eyebrow: "Wear your roots",
-    title: "Textiles, style, and craft.",
-    body: "Discover expressive fashion and thoughtful accessories from independent sellers.",
+    eyebrow: "Wear your roots & style",
+    title: "Textiles, fashion, and craft.",
+    body: "Discover expressive fashion, handmade jewelry, and thoughtful accessories from independent sellers.",
     action: "Shop fashion & textiles",
+    href: "/category/fashion-textiles",
   },
   {
-    eyebrow: "Bring home something meaningful",
-    title: "Made by hands. Chosen by you.",
-    body: "Find warm home details, pantry favourites, and gifts that make every day better.",
-    action: "Meet local makers",
+    eyebrow: "Modern living & tech",
+    title: "Electronics & smart gadgets.",
+    body: "Upgrade your workspace and home with reliable devices, appliances, and high quality electronics.",
+    action: "Shop electronics",
+    href: "/category/electronics",
+  },
+  {
+    eyebrow: "Natural beauty & wellness",
+    title: "Pure care for mind & body.",
+    body: "Indulge in authentic skincare, organic oils, and handcrafted wellness products.",
+    action: "Shop beauty & care",
+    href: "/category/beauty-care",
   },
 ];
 
@@ -87,12 +98,16 @@ const Hero = () => {
                 width="1200"
                 height="500"
                 loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+                decoding={index === 0 ? "sync" : "async"}
               />
               <div className={styles.heroCopy}>
                 <p className={styles.eyebrow}>{copy.eyebrow}</p>
                 <h1>{copy.title}</h1>
                 <p className={styles.body}>{copy.body}</p>
-                <span className={styles.heroAction}>{copy.action} <span aria-hidden="true">→</span></span>
+                <Link to={copy.href} className={styles.heroAction}>
+                  {copy.action} <span aria-hidden="true">→</span>
+                </Link>
               </div>
             </div>
           );

@@ -2,11 +2,9 @@ import React from "react";
 import styles from "./footer.module.css";
 
 const Footer = () => {
-  const handleBackToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <footer className={styles.footerWrapper}>
-      <button className={styles.backToTop} onClick={handleBackToTop}>Back to top</button>
       <div className={styles.footerContent}>
         <div className={styles.brandBlock}>
           <div className={styles.footerMark}>D</div>
@@ -18,7 +16,7 @@ const Footer = () => {
           <h3>Discover</h3>
           <a href="/results">Fresh picks</a>
           <a href="/category/electronics">Electronics</a>
-          <a href="/category/men's clothing">Fashion &amp; textiles</a>
+          <a href="/category/fashion-textiles">Fashion &amp; textiles</a>
           <a href="/category/home-living">Home &amp; living</a>
         </div>
         <div className={styles.footerSection}>
@@ -30,7 +28,7 @@ const Footer = () => {
         </div>
         <div className={styles.footerSection}>
           <h3>For sellers</h3>
-          <a href="/auth/signup">Become a seller</a>
+          <a href="/vendor">Become a seller</a>
           <a href="/results">Seller stories</a>
           <a href="/results">Seller support</a>
           <a href="/results">Community standards</a>

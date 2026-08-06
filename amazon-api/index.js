@@ -23,18 +23,73 @@ const allowedOrigins = (process.env.CORS_ORIGINS || clientUrl)
   .filter(Boolean);
 
 const ordersApi = require("./orders");
+const catalogApi = require("./catalog");
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow any localhost origin (e.g. 5173, 5174, etc.)
+      if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
       return callback(new Error("Origin is not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+const prisma = require("./prisma/client");
+
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
+    return res.status(503).send("Stripe Webhook is not configured.");
+  }
+
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("[WEBHOOK ERROR]", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    try {
+      const authId = session.metadata?.authId;
+      
+      if (authId) {
+        // Find user by authId
+        let user = await prisma.user.findUnique({
+          where: { authId }
+        });
+        
+        if (user) {
+          // In a real app you'd fetch the line items from Stripe to get the actual cart contents.
+          // For now, we record a top-level order with the total amount.
+          await prisma.order.create({
+            data: {
+              userId: user.id,
+              total: session.amount_total / 100,
+              status: "PAID",
+              address: session.shipping_details?.address?.line1 || "No address provided"
+            }
+          });
+        }
+      }
+    } catch (dbError) {
+      console.error("[WEBHOOK DB ERROR]", dbError);
+    }
+  }
+
+  res.json({ received: true });
+});
+
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => {
@@ -42,16 +97,14 @@ app.get("/health", (_req, res) => {
     ok: true,
     stripeConfigured: Boolean(stripe),
     databaseConfigured: Boolean(process.env.DATABASE_URL),
-    firebaseConfigured: Boolean(
-      process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-        (process.env.FIREBASE_PROJECT_ID &&
-          process.env.FIREBASE_CLIENT_EMAIL &&
-          process.env.FIREBASE_PRIVATE_KEY)
+    supabaseConfigured: Boolean(
+      process.env.SUPABASE_URL && process.env.SUPABASE_JWT_SECRET
     ),
   });
 });
 
 app.use("/api", ordersApi);
+app.use("/api", catalogApi);
 
 app.post("/api/payment/create-checkout-session", async (req, res) => {
   if (!stripe) {
@@ -84,6 +137,9 @@ app.post("/api/payment/create-checkout-session", async (req, res) => {
       mode: "payment",
       success_url: `${clientUrl}/success`,
       cancel_url: `${clientUrl}/cancel`,
+      metadata: {
+        authId: req.body.authId || ""
+      }
     });
     return res.status(200).json({ url: session.url });
   } catch (error) {

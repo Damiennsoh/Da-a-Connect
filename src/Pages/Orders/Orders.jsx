@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Layout from "../../components/Layout";
 import styles from "./orders.module.css";
 import orderNowGif from "../../assets/Images/order-now.gif";
-import { auth } from "../../Utility/firebase";
+import { supabase } from "../../Utility/supabase";
 import { backendBaseURL as backendUrl } from "../../API/endPoints";
 import OrderMap from "./OrderMap";
 
@@ -14,11 +14,10 @@ const Orders = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        const user = auth.currentUser;
-        if (!user) throw new Error("User not authenticated");
-        const idToken = await user.getIdToken();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("User not authenticated");
         const response = await fetch(`${backendUrl}/orders`, {
-          headers: { Authorization: `Bearer ${idToken}` },
+          headers: { Authorization: `Bearer ${session.access_token}` },
         });
         let data = await response.json();
         // Parse address JSON to shippingDetails

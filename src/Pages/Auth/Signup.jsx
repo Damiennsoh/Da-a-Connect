@@ -1,24 +1,10 @@
 import React, { useState } from "react";
 import styles from "./auth.module.css";
 import { useNavigate, Link } from "react-router-dom";
-import { auth, isFirebaseConfigured } from "../../Utility/firebase";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
+import { supabase, isSupabaseConfigured } from "../../Utility/supabase";
 import { toast } from "react-toastify";
 import { ClipLoader } from "react-spinners";
 import { useCart } from "../../components/DataProvider/DataProvider";
-import { ACTIONS } from "../../Utility/actions";
-
-// Background and provider imagery
-import BG1 from "../../assets/Images/login-BG.png"
-import BG2 from "../../assets/Images/login-BG2.png";
-import googleIcon from "../../assets/Images/google.png";
-
-const provider = new GoogleAuthProvider();
 
 const Signup = () => {
   useCart();
@@ -29,9 +15,11 @@ const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [bgLoaded, setBgLoaded] = useState(false);
+  const [accountType, setAccountType] = useState("shopper");
   const navigate = useNavigate();
+
+  const postSignupPath =
+    accountType === "vendor" ? "/vendor/setup" : "/home";
 
   document.title = "Create your account | Da'a Connect";
 
@@ -51,7 +39,7 @@ const Signup = () => {
     if (
       e.target.value === "" ||
       !e.target.value.includes("@") ||
-      !e.target.value.includes(".com")
+      !e.target.value.includes(".")
     ) {
       setEmailError("Please enter a valid email address.");
     } else {
@@ -62,73 +50,66 @@ const Signup = () => {
   const handlePasswordBlur = (e) => {
     if (e.target.value === "") {
       setPasswordError("Please enter your password.");
-    } else if (e.target.value.length < 4) {
-      setPasswordError("Password is too small.");
+    } else if (e.target.value.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
     } else {
       setPasswordError("");
     }
   };
 
   const RegisterUser = async () => {
-    if (!isFirebaseConfigured || !auth) {
-      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+    if (!isSupabaseConfigured || !supabase) {
+      toast.error("Authentication is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
       return;
     }
-    if (
-      nameError ||
-      emailError ||
-      passwordError ||
-      !name ||
-      !email ||
-      !password
-    )
-      return;
+    if (nameError || emailError || passwordError || !name || !email || !password) return;
     setIsLoading(true);
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        return updateProfile(userCredential.user, { displayName: name }).then(
-          () => {
-            toast.success("Signed up successfully!");
-            navigate("/home");
-          }
-        );
-      })
-      .catch((error) => {
-        toast.error(error.message);
-      })
-      .finally(() => {
-        setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: name, account_type: accountType },
+        },
       });
+      if (error) throw error;
+      toast.success("Signed up successfully! Check your email to confirm your account.");
+      navigate(postSignupPath);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const GoogleAuth = async () => {
-    if (!isFirebaseConfigured || !auth) {
-      toast.error("Authentication is not configured yet. Browsing remains available as a guest.");
+    if (!isSupabaseConfigured || !supabase) {
+      toast.error("Authentication is not configured yet.");
       return;
     }
-    setIsGoogleLoading(true);
-    signInWithPopup(auth, provider)
-      .then(() => {
-        toast.success("Signed up successfully with Google!");
-        navigate("/home");
-      })
-      .catch((error) => {
-        toast.error(error.message);
-      })
-      .finally(() => {
-        setIsGoogleLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}${postSignupPath}` },
       });
+      if (error) throw error;
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
-
-  const handleBgLoad = () => setBgLoaded(true);
 
   return (
     <div className={styles.signinPage}>
       <div className={styles.loginNavbar}>
-        <div className={styles.mainLogo}>
-          <Link to="/">
-            <span className={styles.brandText}>Da&apos;a <b>Connect</b></span>
-          </Link>
+        <div className={styles.navLeft}>
+          <button onClick={() => navigate(-1)} className={styles.backButton} aria-label="Go back">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div className={styles.mainLogo}>
+            <Link to="/" className={styles.brandText}>
+              Da&apos;a <b>Connect</b>
+            </Link>
+          </div>
         </div>
         <div>
           <Link to="/auth/signin">
@@ -138,20 +119,36 @@ const Signup = () => {
           </Link>
         </div>
       </div>
-      <div className={styles.background}>
-        <img src={BG1} className={styles.BG1} onLoad={handleBgLoad} alt="BG1" />
-        <img src={BG2} className={styles.BG2} onLoad={handleBgLoad} alt="BG2" />
-      </div>
-      {bgLoaded && (
-        <div className={styles.mainForm}>
+      <div className={styles.background} aria-hidden="true" />
+      <div className={styles.mainForm}>
           <div className={styles.loginForm}>
             <div className={styles.someText}>
               <p className={styles.user}>User Registration</p>
               <p className={styles.userDesc}>
-                Hey, Enter your details to create a new account
+                Choose how you want to use Da&apos;a Connect, then create your account.
               </p>
             </div>
             <div className={styles.userDetails}>
+              <div className={styles.accountTypeRow}>
+                <button
+                  type="button"
+                  className={`${styles.accountTypeBtn} ${
+                    accountType === "shopper" ? styles.accountTypeBtnActive : ""
+                  }`}
+                  onClick={() => setAccountType("shopper")}
+                >
+                  Shop
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.accountTypeBtn} ${
+                    accountType === "vendor" ? styles.accountTypeBtnActive : ""
+                  }`}
+                  onClick={() => setAccountType("vendor")}
+                >
+                  Sell
+                </button>
+              </div>
               <input
                 type="text"
                 placeholder="Name"
@@ -191,7 +188,7 @@ const Signup = () => {
               <button
                 onClick={RegisterUser}
                 className={styles.signinBtn}
-                disabled={isLoading || isGoogleLoading}
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <ClipLoader color="#ffffff" size={20} />
@@ -204,20 +201,9 @@ const Signup = () => {
                 <button
                   onClick={GoogleAuth}
                   className={styles.google}
-                  disabled={isLoading || isGoogleLoading}
+                  disabled={isLoading}
                 >
-                  {isGoogleLoading ? (
-                    <ClipLoader color="#000000" size={20} />
-                  ) : (
-                    <>
-                      <p>Sign up with</p>
-                      <img
-                        src={googleIcon}
-                        className={styles.googleImg}
-                        alt="Google"
-                      />
-                    </>
-                  )}
+                  <span className={styles.googleLabel}>Sign up with Google</span>
                 </button>
               </div>
               <div className={styles.disclaimer}>
@@ -239,7 +225,6 @@ const Signup = () => {
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 };

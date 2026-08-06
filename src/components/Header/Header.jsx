@@ -3,22 +3,28 @@ import styles from "./header.module.css";
 import { FaSearch, FaBars, FaMapMarkerAlt, FaUser } from "react-icons/fa";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
 import { FiChevronDown } from "react-icons/fi";
-import { Link } from "react-router-dom";
-import usa_flag from "../../assets/Images/usa_flag.png";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../DataProvider/DataProvider";
-import { auth, isFirebaseConfigured } from "../../Utility/firebase";
+import { supabase, isSupabaseConfigured } from "../../Utility/supabase";
 import { ACTIONS } from "../../Utility/actions";
 import { toast } from "react-toastify";
+import { CATEGORIES } from "../../data/categories";
 
 function Header() {
+  const navigate = useNavigate();
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showMobileCategories, setShowMobileCategories] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("all");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [headerState, setHeaderState] = useState("visible"); // 'visible', 'hidden', 'topFixed'
+  const [headerState, setHeaderState] = useState("visible");
   const [country, setCountry] = useState("");
   const headerRef = useRef(null);
+  const categoryDropdownRef = useRef(null);
   const { cart, user, dispatch, shippingDetails } = useCart();
 
   useEffect(() => {
@@ -37,13 +43,10 @@ function Header() {
         : 0;
 
       if (currentScrollY > lastScrollY && currentScrollY > headerHeight) {
-        // Scrolling Down and past the header
         if (headerState !== "hidden") setHeaderState("hidden");
       } else if (currentScrollY < lastScrollY && currentScrollY > 0) {
-        // Scrolling Up (not at top)
         if (headerState !== "topFixed") setHeaderState("topFixed");
       } else if (currentScrollY === 0) {
-        // At the very top
         if (headerState !== "visible") setHeaderState("visible");
       }
       setLastScrollY(currentScrollY <= 0 ? 0 : currentScrollY);
@@ -56,7 +59,7 @@ function Header() {
   useEffect(() => {
     if (!shippingDetails?.country) {
       fetch("https://ipapi.co/json/")
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.country_name) {
             setCountry(data.country_name);
@@ -66,35 +69,56 @@ function Header() {
     }
   }, [shippingDetails]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target)
+      ) {
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const displayCountry = shippingDetails?.country || country || "Country";
 
-  const desktopNavLinks = [
-    { name: "Shop categories", icon: FaBars },
-    "Fresh picks",
-    "Ghana-made",
-    "Sell with us",
-    "Help centre",
-  ];
-
   const secondaryNavLinks = [
-    "All categories",
-    "Fashion & textiles",
-    "Beauty & care",
-    "Home & living",
-    "Electronics",
-    "Groceries",
-    "Crafts & gifts",
-    "Books & learning",
-    "Deals",
+    { label: "All categories", href: "/results" },
+    ...CATEGORIES.map((cat) => ({
+      label: cat.title,
+      href: `/category/${cat.slug}`,
+    })),
+    { label: "Deals", href: "/results?q=deal" },
   ];
 
-  // Sign out handler
   const handleSignOut = async () => {
-    if (isFirebaseConfigured && auth) {
-      await auth.signOut();
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
     }
     dispatch({ type: ACTIONS.SET_USER, payload: null });
     toast.success("Signed out successfully!");
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (searchCategory !== "all") {
+      navigate(`/category/${searchCategory}${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+      return;
+    }
+    if (query) {
+      navigate(`/results?q=${encodeURIComponent(query)}`);
+      return;
+    }
+    navigate("/results");
+  };
+
+  const closeMobileMenu = () => {
+    setShowMenu(false);
+    setShowMobileCategories(false);
   };
 
   return (
@@ -106,7 +130,6 @@ function Header() {
         ${headerState === "topFixed" ? styles.headerTopFixed : ""}
       `}
     >
-      {/* Top Row */}
       <div className={styles.topRow}>
         <div className={styles.leftSection}>
           <button
@@ -114,6 +137,8 @@ function Header() {
               isMobile ? "" : styles.hideOnDesktopFlex
             }`}
             onClick={() => setShowMenu(!showMenu)}
+            aria-label="Open menu"
+            type="button"
           >
             <FaBars />
           </button>
@@ -121,7 +146,6 @@ function Header() {
             <span className={styles.logoMark}>D</span>
             <span className={styles.logoWordmark}>Da&apos;a <b>Connect</b></span>
           </Link>
-          {/* DeliverTo for DESKTOP - hidden on mobile via CSS */}
           <Link
             to="/shipping"
             style={{ textDecoration: "none", color: "inherit" }}
@@ -136,33 +160,42 @@ function Header() {
           </Link>
         </div>
 
-        {/* Center: Search Bar */}
-        <form className={styles.searchBar}>
-          <select className={styles.searchDropdown} title="Search category">
-            <option>All categories</option>
-            <option>Fashion & textiles</option>
-            <option>Electronics</option>
-            <option>Home & living</option>
-            <option>Groceries</option>
+        <form className={styles.searchBar} onSubmit={handleSearchSubmit}>
+          <select
+            className={styles.searchDropdown}
+            title="Search category"
+            value={searchCategory}
+            onChange={(event) => setSearchCategory(event.target.value)}
+            aria-label="Filter search by category"
+          >
+            <option value="all">All categories</option>
+            {CATEGORIES.map((cat) => (
+              <option key={cat.slug} value={cat.slug}>
+                {cat.title}
+              </option>
+            ))}
           </select>
           <input
             className={styles.searchInput}
             placeholder="Search Da'a Connect"
             aria-label="Search Da'a Connect"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
           />
           <button className={styles.searchBtn} type="submit" title="Search">
             <FaSearch />
           </button>
         </form>
 
-        {/* Right: Language, Account, Orders, Cart */}
         <div className={styles.rightSection}>
           <div
             className={`${styles.langWrap} ${styles.hideOnMobile}`}
             onMouseEnter={() => setShowLangDropdown(true)}
             onMouseLeave={() => setShowLangDropdown(false)}
           >
-            <img src={usa_flag} alt="EN" className={styles.flag} />
+            <span className={styles.flagEmoji} aria-hidden="true">
+              🇺🇸
+            </span>
             <span className={styles.langText}>EN</span>
             <FiChevronDown className={styles.chevronIcon} />
             {showLangDropdown && (
@@ -173,7 +206,6 @@ function Header() {
               </div>
             )}
           </div>
-          {/* Account & Lists - Adapts for mobile */}
           <div
             className={styles.accountWrap}
             onMouseEnter={() => setShowAccountDropdown(true)}
@@ -187,11 +219,11 @@ function Header() {
                 <>
                   <span className={styles.smallText}>
                     Hello,{` `}
-                    {user.reloadUserInfo?.displayName ||
-                      user.displayName ||
+                    {user.user_metadata?.display_name ||
+                      user.user_metadata?.full_name ||
                       (user.email
                         ? user.email.split("@")[0]
-                        : user.reloadUserInfo?.email?.split("@")[0])}
+                        : "User")}
                   </span>
                   <span
                     className={styles.boldText}
@@ -260,7 +292,12 @@ function Header() {
               & Orders
             </Link>
           </div>
-          {/* Cart  */}
+          {user && (
+            <Link to="/vendor" className={`${styles.ordersWrap} ${styles.hideOnMobile}`}>
+              <span className={styles.smallText}>Seller</span>
+              <span className={styles.boldText}>Dashboard</span>
+            </Link>
+          )}
           <Link to="/cart" className={styles.cartWrap}>
             <HiOutlineShoppingCart className={styles.cartIcon} />
             <span className={styles.cartCount}>
@@ -270,34 +307,74 @@ function Header() {
           </Link>
         </div>
       </div>
-      {/* Secondary Nav Links (Scrollable on Mobile) */}
+
       <nav
         className={`
           ${styles.bottomRow}
           ${headerState !== "visible" ? styles.bottomRowHidden : ""}
         `}
       >
-        {isMobile
-          ? secondaryNavLinks.map((link) => (
-              <span key={link} className={styles.navLink}>
-                {link}
-              </span>
-            ))
-          : desktopNavLinks.map((link) =>
-              typeof link === "string" ? (
-                <span key={link} className={styles.navLink}>
-                  {link}
-                </span>
-              ) : (
-                <span
-                  key={link.name}
-                  className={`${styles.navLink} ${styles.navLinkWithIcon}`}
+        {!isMobile && (
+          <div className={styles.categoryDropdownWrap} ref={categoryDropdownRef}>
+            <button
+              type="button"
+              className={`${styles.navLink} ${styles.navLinkWithIcon} ${styles.categoryToggle}`}
+              aria-expanded={showCategoryDropdown}
+              aria-haspopup="true"
+              onClick={() => setShowCategoryDropdown((open) => !open)}
+            >
+              <FaBars className={styles.navIcon} />
+              Shop categories
+              <FiChevronDown className={styles.chevronIcon} />
+            </button>
+            {showCategoryDropdown && (
+              <div className={styles.categoryDropdownMenu} role="menu">
+                <Link
+                  to="/results"
+                  className={styles.categoryDropdownItem}
+                  role="menuitem"
+                  onClick={() => setShowCategoryDropdown(false)}
                 >
-                  <link.icon className={styles.navIcon} />
-                  {link.name}
-                </span>
-              )
+                  All categories
+                </Link>
+                {CATEGORIES.map((cat) => (
+                  <Link
+                    key={cat.slug}
+                    to={`/category/${cat.slug}`}
+                    className={styles.categoryDropdownItem}
+                    role="menuitem"
+                    onClick={() => setShowCategoryDropdown(false)}
+                  >
+                    {cat.title}
+                  </Link>
+                ))}
+              </div>
             )}
+          </div>
+        )}
+
+        <div className={styles.navLinksScroll}>
+          {(isMobile ? secondaryNavLinks : secondaryNavLinks.slice(1)).map((link) => (
+            <Link key={link.href} to={link.href} className={styles.navLink}>
+              {link.label}
+            </Link>
+          ))}
+
+          {!isMobile && (
+            <>
+              <Link to="/results" className={styles.navLink}>
+                Fresh picks
+              </Link>
+              <Link to="/category/crafts-gifts" className={styles.navLink}>
+                Ghana-made
+              </Link>
+              <Link to="/vendor" className={styles.navLink}>
+                Sell with us
+              </Link>
+              <span className={styles.navLink}>Help centre</span>
+            </>
+          )}
+        </div>
       </nav>
 
       <div
@@ -313,13 +390,11 @@ function Header() {
         >
           <div className={styles.deliverToMobile}>
             <FaMapMarkerAlt className={styles.locationIcon} />
-              <span>Shop from Ghana · Deliver to {displayCountry}</span>
+            <span>Shop from Ghana · Deliver to {displayCountry}</span>
           </div>
         </Link>
       </div>
 
-      {/* Responsive Mobile Menu (triggered by top-left hamburger) */}
-      {/* Hamburger Mobile Menu Overlay */}
       <div
         className={`${styles.mobileMenu} ${
           showMenu ? styles.mobileMenuOpen : ""
@@ -331,7 +406,9 @@ function Header() {
           <h3 style={{ flex: 1 }}>
             Hello,{" "}
             {user ? (
-              user.displayName || user.email
+              user.user_metadata?.display_name ||
+              user.user_metadata?.full_name ||
+              user.email
             ) : (
               <Link to="/auth/signin">Sign In</Link>
             )}
@@ -339,30 +416,66 @@ function Header() {
           <button
             className={styles.menuCloseBtn}
             aria-label="Close menu"
-            onClick={() => setShowMenu(false)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "white",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-            }}
+            onClick={closeMobileMenu}
+            type="button"
           >
             ×
           </button>
         </div>
-        <Link
-          to="/"
-          className={styles.navLink}
-          onClick={() => setShowMenu(false)}
-        >
+        <Link to="/" className={styles.navLink} onClick={closeMobileMenu}>
           Home
         </Link>
-        <span className={styles.navLink}>          Browse categories</span>
+        <button
+          type="button"
+          className={`${styles.navLink} ${styles.mobileCategoryToggle}`}
+          onClick={() => setShowMobileCategories((open) => !open)}
+          aria-expanded={showMobileCategories}
+        >
+          Browse categories
+          <FiChevronDown className={styles.chevronIcon} />
+        </button>
+        {showMobileCategories && (
+          <div className={styles.mobileCategoryList}>
+            <Link
+              to="/results"
+              className={styles.mobileCategoryItem}
+              onClick={closeMobileMenu}
+            >
+              All categories
+            </Link>
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.slug}
+                to={`/category/${cat.slug}`}
+                className={styles.mobileCategoryItem}
+                onClick={closeMobileMenu}
+              >
+                {cat.title}
+              </Link>
+            ))}
+          </div>
+        )}
+        {user ? (
+          <Link
+            to="/vendor"
+            className={styles.navLink}
+            onClick={closeMobileMenu}
+          >
+            Seller dashboard
+          </Link>
+        ) : (
+          <Link
+            to="/auth/signup"
+            className={styles.navLink}
+            onClick={closeMobileMenu}
+          >
+            Become a seller
+          </Link>
+        )}
         <Link
           to="/results"
           className={styles.navLink}
-          onClick={() => setShowMenu(false)}
+          onClick={closeMobileMenu}
         >
           Fresh picks
         </Link>
@@ -370,7 +483,7 @@ function Header() {
           <Link
             to="/orders"
             className={styles.navLink}
-            onClick={() => setShowMenu(false)}
+            onClick={closeMobileMenu}
           >
             Your Orders
           </Link>
@@ -384,7 +497,7 @@ function Header() {
           className={styles.navLink}
           onClick={() => {
             handleSignOut();
-            setShowMenu(false);
+            closeMobileMenu();
           }}
           style={{ cursor: "pointer" }}
         >

@@ -1,29 +1,39 @@
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, isFirebaseConfigured } from "./Utility/firebase";
+import { supabase, isSupabaseConfigured } from "./Utility/supabase";
 import { useCart } from "./components/DataProvider/DataProvider";
 import { ACTIONS } from "./Utility/actions";
 import "./App.css";
 import AppRouter from "./Router";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ScrollToTopFab from "./components/ScrollToTopFab/ScrollToTopFab";
 
 function App() {
   const { dispatch } = useCart();
+
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!isSupabaseConfigured || !supabase) {
       dispatch({ type: ACTIONS.SET_USER, payload: null });
       return undefined;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      dispatch({ type: ACTIONS.SET_USER, payload: user });
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      dispatch({ type: ACTIONS.SET_USER, payload: session?.user ?? null });
     });
-    return () => unsubscribe();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      dispatch({ type: ACTIONS.SET_USER, payload: session?.user ?? null });
+    });
+
+    return () => subscription.unsubscribe();
   }, [dispatch]);
+
   return (
     <>
       <AppRouter />
+      <ScrollToTopFab />
     </>
   );
 }
