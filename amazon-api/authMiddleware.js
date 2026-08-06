@@ -31,10 +31,12 @@ async function authenticateToken(req, res, next) {
       }
 
       req.authId = data.user.id;
-      req.body = req.body || {};
-      if (!req.body.email && data.user.email) {
-        req.body.email = data.user.email;
-      }
+      req.authUser = data.user;
+      req.authEmail = data.user.email || null;
+      req.authName =
+        data.user.user_metadata?.display_name ||
+        data.user.user_metadata?.full_name ||
+        null;
 
       return next();
     } catch (err) {

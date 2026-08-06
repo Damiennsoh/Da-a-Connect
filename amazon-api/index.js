@@ -24,6 +24,7 @@ const allowedOrigins = (process.env.CORS_ORIGINS || clientUrl)
 
 const ordersApi = require("./orders");
 const catalogApi = require("./catalog");
+const { authenticateToken } = require("./authMiddleware");
 
 app.use(
   cors({
@@ -106,7 +107,7 @@ app.get("/health", (_req, res) => {
 app.use("/api", ordersApi);
 app.use("/api", catalogApi);
 
-app.post("/api/payment/create-checkout-session", async (req, res) => {
+app.post("/api/payment/create-checkout-session", authenticateToken, async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ error: "Stripe is not configured on the backend." });
   }
@@ -138,7 +139,7 @@ app.post("/api/payment/create-checkout-session", async (req, res) => {
       success_url: `${clientUrl}/success`,
       cancel_url: `${clientUrl}/cancel`,
       metadata: {
-        authId: req.body.authId || ""
+        authId: req.authId
       }
     });
     return res.status(200).json({ url: session.url });

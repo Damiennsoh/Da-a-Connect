@@ -16,8 +16,8 @@ async function getVendorForUser(userId) {
 async function requireVendor(req, res, next) {
   try {
     const user = await ensureUser(req.authId, {
-      email: req.body?.email,
-      name: req.body?.name,
+      email: req.authEmail || req.body?.email,
+      name: req.authName || req.body?.name,
     });
     const vendor = await getVendorForUser(user.id);
 
@@ -36,7 +36,10 @@ async function requireVendor(req, res, next) {
 
 router.get("/vendors/me", authenticateToken, async (req, res) => {
   try {
-    const user = await ensureUser(req.authId);
+    const user = await ensureUser(req.authId, {
+      email: req.authEmail,
+      name: req.authName,
+    });
     const vendor = await getVendorForUser(user.id);
 
     if (!vendor) {
@@ -71,7 +74,10 @@ router.post("/vendors/register", authenticateToken, async (req, res) => {
         .json({ error: "Shop name and location are required." });
     }
 
-    const user = await ensureUser(req.authId, { email, name });
+    const user = await ensureUser(req.authId, {
+      email: req.authEmail || email,
+      name: req.authName || name,
+    });
     const existingVendor = await getVendorForUser(user.id);
 
     if (existingVendor) {
