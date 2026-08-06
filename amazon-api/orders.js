@@ -36,14 +36,14 @@ router.post("/orders", authenticateToken, async (req, res) => {
     let user;
     try {
       user = await requestPrisma.user.findUnique({
-        where: { authId: authId },
+        where: { authId },
       });
       if (!user) {
         user = await requestPrisma.user.create({
           data: {
-            authId: authId,
-            email: email || `${authId}@unknown.com`,
-            name: name || null,
+            authId,
+            email: req.authEmail || email || `${authId}@unknown.local`,
+            name: req.authName || name || null,
             password: "",
           },
         });
@@ -92,7 +92,10 @@ router.get("/orders", authenticateToken, async (req, res) => {
   try {
     const authId = req.authId;
 
-    const user = await prisma.user.findUnique({ where: { authId } });
+    const user = await ensureUser(req.authId, {
+      email: req.authEmail,
+      name: req.authName,
+    });
     
     if (!user) {
       return res.status(404).json({ error: "User not found" });

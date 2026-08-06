@@ -62,42 +62,15 @@ export async function fetchFakeStoreCategory(apiSlug) {
 }
 
 export async function fetchMarketplaceProducts({ category, q } = {}) {
-  const catalogProducts = await fetchCatalogProducts({ category, q });
-  if (catalogProducts.length > 0) return catalogProducts;
-  if (category) return [];
-
-  const fakeProducts = await fetchFakeStoreProducts();
-  if (!q) return fakeProducts;
-
-  const query = q.toLowerCase();
-  return fakeProducts.filter(
-    (product) =>
-      product.title?.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.category?.toLowerCase().includes(query)
-  );
+  return fetchCatalogProducts({ category, q });
 }
 
 export async function fetchMarketplaceProduct(id) {
-  const catalogProduct = await fetchCatalogProduct(id);
-  if (catalogProduct) return catalogProduct;
-  return fetchFakeStoreProduct(id);
+  return fetchCatalogProduct(id);
 }
 
-export async function fetchMarketplaceCategory(categorySlug, { q, apiSlug } = {}) {
-  const catalogProducts = await fetchCatalogProducts({ category: categorySlug, q });
-  if (catalogProducts.length > 0) return catalogProducts;
-  if (apiSlug) {
-    const fakeProducts = await fetchFakeStoreCategory(apiSlug);
-    if (!q) return fakeProducts;
-    const query = q.toLowerCase();
-    return fakeProducts.filter(
-      (product) =>
-        product.title?.toLowerCase().includes(query) ||
-        product.description?.toLowerCase().includes(query)
-    );
-  }
-  return [];
+export async function fetchMarketplaceCategory(categorySlug, { q } = {}) {
+  return fetchCatalogProducts({ category: categorySlug, q });
 }
 
 export async function getVendorProfile() {

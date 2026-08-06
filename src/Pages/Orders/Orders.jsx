@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import Layout from "../../components/Layout";
 import styles from "./orders.module.css";
 import orderNowGif from "../../assets/Images/order-now.gif";
-import { supabase } from "../../Utility/supabase";
-import { backendBaseURL as backendUrl } from "../../API/endPoints";
+import { apiGet } from "../../API/apiClient";
 import OrderMap from "./OrderMap";
 
 const Orders = () => {

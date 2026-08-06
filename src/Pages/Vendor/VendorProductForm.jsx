@@ -63,7 +63,7 @@ const VendorProductForm = ({ vendor }) => {
     try {
       const uploaded = [];
       for (const file of files) {
-        const url = await uploadProductImage(file, user.uid);
+        const url = await uploadProductImage(file, user.id);
         uploaded.push(url);
       }
       setImages((current) => [...current, ...uploaded].slice(0, 5));
