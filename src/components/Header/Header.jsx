@@ -59,7 +59,7 @@ function Header() {
   useEffect(() => {
     if (!shippingDetails?.country) {
       fetch("https://ipapi.co/json/")
-        .then((res) => res.json())
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.country_name) {
             setCountry(data.country_name);
